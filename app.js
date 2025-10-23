@@ -11,7 +11,12 @@ const status = document.getElementById('status');
 
 startBtn.addEventListener('click', async () => {
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    // stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    stream = await navigator.mediaDevices.getUserMedia({ 
+    video: { facingMode: "environment" }, 
+    audio: true 
+});
+
     preview.srcObject = stream;
 
     recordedChunks = [];
@@ -64,3 +69,4 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js')
     .then(() => console.log('Service Worker зарегистрирован'));
 }
+
