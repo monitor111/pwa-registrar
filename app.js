@@ -1,6 +1,7 @@
 let mediaRecorder;
 let recordedChunks = [];
 let stream;
+let wakeLock = null; // для блокировки сна экрана
 
 const preview = document.getElementById('preview');
 const startBtn = document.getElementById('startBtn');
@@ -9,14 +10,39 @@ const saveBtn = document.getElementById('saveBtn');
 const clearBtn = document.getElementById('clearBtn');
 const status = document.getElementById('status');
 
+// ====== Wake Lock ======
+async function requestWakeLock() {
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    console.log('Wake Lock активирован');
+
+    // если потерялся (например, свернули экран), пробуем заново включить
+    wakeLock.addEventListener('release', () => {
+      console.log('Wake Lock освобождён, пробуем снова...');
+      requestWakeLock().catch(err => console.error('Ошибка при повторном включении Wake Lock:', err));
+    });
+  } catch (err) {
+    console.error('Ошибка активации Wake Lock:', err);
+  }
+}
+
+async function releaseWakeLock() {
+  if (wakeLock !== null) {
+    await wakeLock.release();
+    wakeLock = null;
+    console.log('Wake Lock выключен');
+  }
+}
+// =========================
+
 startBtn.addEventListener('click', async () => {
   try {
-    // stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    stream = await navigator.mediaDevices.getUserMedia({ 
-    video: { facingMode: "environment" }, 
-    audio: true 
-});
+    await requestWakeLock(); // не даём экрану тухнуть
 
+    stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: "environment" }, 
+      audio: true 
+    });
     preview.srcObject = stream;
 
     recordedChunks = [];
@@ -28,6 +54,7 @@ startBtn.addEventListener('click', async () => {
 
     mediaRecorder.onstop = () => {
       saveBtn.disabled = false;
+      releaseWakeLock(); // отпускаем блокировку экрана
     };
 
     mediaRecorder.start();
@@ -69,4 +96,3 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js')
     .then(() => console.log('Service Worker зарегистрирован'));
 }
-
