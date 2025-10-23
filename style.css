@@ -1,16 +1,39 @@
 body {
   font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* убираем горизонтальную прокрутку */
+}
+
+.container {
+  max-width: 100%;
+  padding: 1rem;
 }
 
 #preview {
   border: 3px solid #555;
   background-color: #000;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;        /* кнопки переносятся */
+  justify-content: center;
+  gap: 0.5rem;            /* расстояние между ними */
 }
 
 .btn-group button {
-  margin: 0 5px;
+  flex: 1 1 45%;          /* каждая кнопка примерно половину ширины */
+  min-width: 140px;
+  padding: 0.8rem;
+  font-size: 1rem;
 }
 
 #status {
   font-size: 1.1em;
+  margin-top: 1rem;
+  word-wrap: break-word;
 }
