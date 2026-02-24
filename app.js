@@ -138,13 +138,18 @@ async function releaseWakeLock() {
 // =========================
 
 // ====== Инициализация ffmpeg ======
-const ffmpeg = window.createFFmpeg({ log: true });
+let ffmpeg; // создаём позже
+
+async function initFFmpeg() {
+  if (!ffmpeg) {
+    ffmpeg = window.createFFmpeg({ log: true });
+    await ffmpeg.load(); // загружаем ffmpeg один раз
+  }
+}
 
 async function convertWebMtoMP4(webmBlob) {
-  // загружаем ffmpeg один раз перед первой конвертацией
-  if (!ffmpeg.isLoaded()) {
-    await ffmpeg.load();
-  }
+  // гарантируем, что ffmpeg загружен
+  await initFFmpeg();
 
   // записываем WebM в виртуальную файловую систему ffmpeg
   ffmpeg.FS('writeFile', 'input.webm', await window.fetchFile(webmBlob));
@@ -231,5 +236,6 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js')
     .then(() => console.log('Service Worker зарегистрирован'));
 }
+
 
 
