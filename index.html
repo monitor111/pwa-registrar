@@ -32,15 +32,18 @@
     <div id="status" class="mt-3 text-info"></div>
   </div>
 
+<!-- Подключаем рабочий ffmpeg через jsDelivr -->
 <script type="module">
   import { createFFmpeg, fetchFile } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.8/dist/ffmpeg.min.js';
   window.createFFmpeg = createFFmpeg;
   window.fetchFile = fetchFile;
 </script>
 
+<!-- Подключаем ваш app.js после того как FFmpeg уже в window -->
 <script type="module" src="app.js"></script>
 </body>
 </html>
+
 
 
 
