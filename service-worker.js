@@ -6,24 +6,35 @@ const FILES_TO_CACHE = [
   '/app.js'
 ];
 
+// ====== Install ======
 self.addEventListener('install', (evt) => {
   evt.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(FILES_TO_CACHE))
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (const file of FILES_TO_CACHE) {
+        try {
+          await cache.add(file);
+        } catch (err) {
+          console.warn(`Не удалось закешировать ${file}: ${err}`);
+        }
+      }
+    })
   );
   self.skipWaiting();
 });
 
+// ====== Activate ======
 self.addEventListener('activate', (evt) => {
   evt.waitUntil(
     caches.keys().then((keyList) =>
-      Promise.all(keyList.map((key) => {
-        if (key !== CACHE_NAME) return caches.delete(key);
-      }))
+      Promise.all(
+        keyList.map((key) => key !== CACHE_NAME && caches.delete(key))
+      )
     )
   );
   self.clients.claim();
 });
 
+// ====== Fetch ======
 self.addEventListener('fetch', (evt) => {
   evt.respondWith(
     caches.match(evt.request).then((response) => response || fetch(evt.request))
