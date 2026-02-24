@@ -101,6 +101,8 @@
 
 
 
+import { createFFmpeg, fetchFile } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.8/dist/ffmpeg.min.mjs';
+
 let mediaRecorder;
 let recordedChunks = [];
 let stream;
@@ -141,15 +143,16 @@ let ffmpeg;
 
 async function initFFmpeg() {
   if (!ffmpeg) {
-    if (!window.createFFmpeg) throw new Error('FFmpeg не загружен! Проверьте подключение ffmpeg.min.mjs');
-    ffmpeg = window.createFFmpeg({ log: true });
+    ffmpeg = createFFmpeg({ log: true });
+    status.textContent = 'Загрузка FFmpeg... Подождите.';
     await ffmpeg.load();
+    status.textContent = '';
   }
 }
 
 async function convertWebMtoMP4(webmBlob) {
   await initFFmpeg();
-  ffmpeg.FS('writeFile', 'input.webm', await window.fetchFile(webmBlob));
+  ffmpeg.FS('writeFile', 'input.webm', await fetchFile(webmBlob));
   await ffmpeg.run('-i', 'input.webm', '-c:v', 'libx264', '-c:a', 'aac', 'output.mp4');
   const data = ffmpeg.FS('readFile', 'output.mp4');
   return new Blob([data.buffer], { type: 'video/mp4' });
