@@ -29,12 +29,13 @@
 
   <!-- правильно подключаем ES‑модуль FFmpeg -->
   <script type="module">
-    import { createFFmpeg, fetchFile } from 'https://unpkg.com/@ffmpeg/ffmpeg@0.11.8/dist/ffmpeg.min.mjs';
-    window.createFFmpeg = createFFmpeg;
-    window.fetchFile = fetchFile;
-  </script>
+  import { createFFmpeg, fetchFile } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.1/dist/ffmpeg.min.mjs';
+  window.createFFmpeg = createFFmpeg;
+  window.fetchFile = fetchFile;
+</script>
 
   <!-- ваш app.js как модуль -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
+
