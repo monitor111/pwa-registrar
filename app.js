@@ -104,7 +104,7 @@
 let mediaRecorder;
 let recordedChunks = [];
 let stream;
-let wakeLock = null; // для блокировки сна экрана
+let wakeLock = null;
 
 const preview = document.getElementById('preview');
 const startBtn = document.getElementById('startBtn');
@@ -135,44 +135,34 @@ async function releaseWakeLock() {
     console.log('Wake Lock выключен');
   }
 }
-// =========================
 
 // ====== Инициализация ffmpeg ======
-let ffmpeg; // создаём позже
+let ffmpeg;
 
 async function initFFmpeg() {
   if (!ffmpeg) {
+    if (!window.createFFmpeg) throw new Error('FFmpeg не загружен! Проверьте подключение ffmpeg.min.mjs');
     ffmpeg = window.createFFmpeg({ log: true });
-    await ffmpeg.load(); // загружаем ffmpeg один раз
+    await ffmpeg.load();
   }
 }
 
 async function convertWebMtoMP4(webmBlob) {
-  // гарантируем, что ffmpeg загружен
   await initFFmpeg();
-
-  // записываем WebM в виртуальную файловую систему ffmpeg
   ffmpeg.FS('writeFile', 'input.webm', await window.fetchFile(webmBlob));
-
-  // конвертируем WebM в MP4 с кодеками H.264 и AAC
   await ffmpeg.run('-i', 'input.webm', '-c:v', 'libx264', '-c:a', 'aac', 'output.mp4');
-
-  // читаем готовый MP4 из виртуальной файловой системы ffmpeg
   const data = ffmpeg.FS('readFile', 'output.mp4');
-
-  // создаём Blob типа MP4 для скачивания
   return new Blob([data.buffer], { type: 'video/mp4' });
 }
 
-// ==========================
-
+// ====== Обработка кнопок ======
 startBtn.addEventListener('click', async () => {
   try {
-    await requestWakeLock(); // не даём экрану тухнуть
+    await requestWakeLock();
 
-    stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: "environment" }, 
-      audio: true 
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" },
+      audio: true
     });
     preview.srcObject = stream;
 
@@ -232,9 +222,11 @@ clearBtn.addEventListener('click', () => {
   status.textContent = 'Очистка выполнена.';
 });
 
+// ====== Service Worker ======
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js')
-    .then(() => console.log('Service Worker зарегистрирован'));
+    .then(() => console.log('Service Worker зарегистрирован'))
+    .catch(err => console.error('Ошибка регистрации Service Worker:', err));
 }
 
 
