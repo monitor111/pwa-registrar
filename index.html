@@ -13,7 +13,6 @@
 
   <!-- Стили -->
   <link rel="stylesheet" href="style.css">
-
 </head>
 <body class="bg-dark text-light">
 
@@ -32,14 +31,10 @@
     <div id="status" class="mt-3 text-info"></div>
   </div>
 
-  <!-- Подключаем рабочий ffmpeg модуль -->
-  <!-- <script type="module">
-    import { createFFmpeg, fetchFile } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.8/dist/ffmpeg.min.mjs';
-    window.createFFmpeg = createFFmpeg;
-    window.fetchFile = fetchFile;
-  </script> -->
+  <!-- Подключаем FFmpeg через jsDelivr (UMD) -->
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.8/dist/ffmpeg.min.js"></script>
 
-  <!-- Ваш основной скрипт после того как FFmpeg уже доступен -->
-  <script type="module" src="app.js"></script>
+  <!-- Подключаем ваш app.js -->
+  <script src="app.js"></script>
 </body>
 </html>
