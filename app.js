@@ -138,13 +138,22 @@ async function releaseWakeLock() {
 // =========================
 
 // ====== Инициализация ffmpeg ======
-const { createFFmpeg, fetchFile } = FFmpeg;
-const ffmpeg = createFFmpeg({ log: true });
+let ffmpeg;
+
+async function initFFmpeg() {
+  if (!window.FFmpeg) {
+    throw new Error('FFmpeg не загружен! Проверьте подключение скрипта ffmpeg.min.js');
+  }
+
+  const { createFFmpeg, fetchFile } = window.FFmpeg;
+  ffmpeg = createFFmpeg({ log: true });
+  await ffmpeg.load();
+}
 
 async function convertWebMtoMP4(webmBlob) {
-  if (!ffmpeg.isLoaded()) await ffmpeg.load();
+  if (!ffmpeg) await initFFmpeg(); // ждем загрузки ffmpeg перед конвертацией
 
-  ffmpeg.FS('writeFile', 'input.webm', await fetchFile(webmBlob));
+  ffmpeg.FS('writeFile', 'input.webm', await window.FFmpeg.fetchFile(webmBlob));
   await ffmpeg.run('-i', 'input.webm', '-c:v', 'libx264', '-c:a', 'aac', 'output.mp4');
   const data = ffmpeg.FS('readFile', 'output.mp4');
   return new Blob([data.buffer], { type: 'video/mp4' });
@@ -222,3 +231,4 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js')
     .then(() => console.log('Service Worker зарегистрирован'));
 }
+
