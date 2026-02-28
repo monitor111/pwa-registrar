@@ -138,9 +138,9 @@ startBtn.addEventListener('click', async () => {
   try {
     await requestWakeLock();
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-      audio: true
-    });
+  video: { facingMode: { ideal: "environment" } },
+  audio: true
+});
     preview.srcObject = stream;
 
     recordedChunks = [];
@@ -208,6 +208,7 @@ if ('serviceWorker' in navigator) {
     .then(() => console.log('Service Worker зарегистрирован'))
     .catch(err => console.error(err));
 }
+
 
 
 
