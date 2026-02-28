@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-registrar-v3';
+const CACHE_NAME = 'pwa-registrar-v4';
 const FILES_TO_CACHE = [
   '/',
   '/index.html',
@@ -6,7 +6,6 @@ const FILES_TO_CACHE = [
   '/app.js'
 ];
 
-// ====== Install ======
 self.addEventListener('install', (evt) => {
   evt.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
@@ -22,7 +21,6 @@ self.addEventListener('install', (evt) => {
   self.skipWaiting();
 });
 
-// ====== Activate ======
 self.addEventListener('activate', (evt) => {
   evt.waitUntil(
     caches.keys().then((keyList) =>
@@ -34,11 +32,8 @@ self.addEventListener('activate', (evt) => {
   self.clients.claim();
 });
 
-// ====== Fetch ======
 self.addEventListener('fetch', (evt) => {
   evt.respondWith(
     caches.match(evt.request).then((response) => response || fetch(evt.request))
   );
 });
-
-
