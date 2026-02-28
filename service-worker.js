@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-registrar-v1';
+const CACHE_NAME = 'pwa-registrar-v2';
 const FILES_TO_CACHE = [
   '/',
   '/index.html',
@@ -40,3 +40,4 @@ self.addEventListener('fetch', (evt) => {
     caches.match(evt.request).then((response) => response || fetch(evt.request))
   );
 });
+
