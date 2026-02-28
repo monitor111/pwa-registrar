@@ -118,9 +118,7 @@ async function requestWakeLock() {
   try {
     wakeLock = await navigator.wakeLock.request('screen');
     console.log('Wake Lock активирован');
-
     wakeLock.addEventListener('release', () => {
-      console.log('Wake Lock освобождён, пробуем снова...');
       requestWakeLock().catch(err => console.error(err));
     });
   } catch (err) {
@@ -132,47 +130,38 @@ async function releaseWakeLock() {
   if (wakeLock !== null) {
     await wakeLock.release();
     wakeLock = null;
-    console.log('Wake Lock выключен');
   }
-}
-
-// ====== Инициализация ffmpeg ======
-let ffmpeg;
-
-async function initFFmpeg() {
-  if (!ffmpeg) {
-    if (!window.FFmpeg) throw new Error('FFmpeg не загружен! Проверьте подключение ffmpeg.min.js');
-    const { createFFmpeg, fetchFile } = window.FFmpeg;
-    window.createFFmpeg = createFFmpeg;
-    window.fetchFile = fetchFile;
-
-    ffmpeg = createFFmpeg({ log: true });
-    status.textContent = 'Загрузка FFmpeg... Подождите.';
-    await ffmpeg.load();
-    status.textContent = '';
-  }
-}
-
-async function convertWebMtoMP4(webmBlob) {
-  await initFFmpeg();
-  ffmpeg.FS('writeFile', 'input.webm', await window.fetchFile(webmBlob));
-  await ffmpeg.run('-i', 'input.webm', '-c:v', 'libx264', '-c:a', 'aac', 'output.mp4');
-  const data = ffmpeg.FS('readFile', 'output.mp4');
-  return new Blob([data.buffer], { type: 'video/mp4' });
 }
 
 // ====== Кнопки ======
 startBtn.addEventListener('click', async () => {
   try {
     await requestWakeLock();
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: true });
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" },
+      audio: true
+    });
     preview.srcObject = stream;
 
     recordedChunks = [];
-    mediaRecorder = new MediaRecorder(stream);
 
-    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
-    mediaRecorder.onstop = () => { saveBtn.disabled = false; releaseWakeLock(); };
+    // Пробуем mp4 напрямую (работает на iOS Safari и некоторых Android)
+    const mimeType = MediaRecorder.isTypeSupported('video/mp4')
+      ? 'video/mp4'
+      : MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+      ? 'video/webm;codecs=vp9,opus'
+      : 'video/webm';
+
+    mediaRecorder = new MediaRecorder(stream, { mimeType });
+
+    mediaRecorder.ondataavailable = e => {
+      if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      saveBtn.disabled = false;
+      releaseWakeLock();
+    };
 
     mediaRecorder.start();
     status.textContent = 'Идёт запись...';
@@ -192,27 +181,26 @@ stopBtn.addEventListener('click', () => {
   status.textContent = 'Запись остановлена.';
 });
 
-saveBtn.addEventListener('click', async () => {
-  saveBtn.disabled = true;
-  status.textContent = 'Конвертация в MP4... Подождите.';
-  try {
-    const webmBlob = new Blob(recordedChunks, { type: 'video/webm' });
-    const mp4Blob = await convertWebMtoMP4(webmBlob);
+saveBtn.addEventListener('click', () => {
+  const isMP4 = mediaRecorder.mimeType.includes('mp4');
+  const ext = isMP4 ? 'mp4' : 'webm';
+  const type = isMP4 ? 'video/mp4' : 'video/webm';
 
-    const url = URL.createObjectURL(mp4Blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `video_${new Date().toISOString().replace(/[:.]/g, '-')}.mp4`;
-    a.click();
-    URL.revokeObjectURL(url);
-    status.textContent = 'Видео сохранено в MP4.';
-  } catch (err) {
-    console.error(err);
-    status.textContent = 'Ошибка при конвертации видео.';
-  }
+  const blob = new Blob(recordedChunks, { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `video_${new Date().toISOString().replace(/[:.]/g, '-')}.${ext}`;
+  a.click();
+  URL.revokeObjectURL(url);
+  status.textContent = `Видео сохранено (${ext.toUpperCase()}).`;
+  saveBtn.disabled = true;
 });
 
-clearBtn.addEventListener('click', () => { status.textContent = 'Очистка выполнена.'; });
+clearBtn.addEventListener('click', () => {
+  recordedChunks = [];
+  status.textContent = 'Очищено.';
+});
 
 // ====== Service Worker ======
 if ('serviceWorker' in navigator) {
@@ -220,6 +208,7 @@ if ('serviceWorker' in navigator) {
     .then(() => console.log('Service Worker зарегистрирован'))
     .catch(err => console.error(err));
 }
+
 
 
 
