@@ -1,4 +1,3 @@
-
 let mediaRecorder;
 let recordedChunks = [];
 let stream;
@@ -15,7 +14,6 @@ const status = document.getElementById('status');
 async function requestWakeLock() {
   try {
     wakeLock = await navigator.wakeLock.request('screen');
-    console.log('Wake Lock активирован');
     wakeLock.addEventListener('release', () => {
       requestWakeLock().catch(err => console.error(err));
     });
@@ -31,26 +29,38 @@ async function releaseWakeLock() {
   }
 }
 
+// ====== Выбор формата ======
+function getBestMimeType() {
+  const types = [
+    'video/mp4;codecs="avc1.42E01E,mp4a.40.2"',
+    'video/mp4;codecs="avc1.42E01E"',
+    'video/mp4',
+    'video/webm;codecs="avc1.42E01E"',
+    'video/webm;codecs=vp9,opus',
+    'video/webm',
+  ];
+  for (const type of types) {
+    if (MediaRecorder.isTypeSupported(type)) return type;
+  }
+  return '';
+}
+
 // ====== Кнопки ======
 startBtn.addEventListener('click', async () => {
   try {
     await requestWakeLock();
     stream = await navigator.mediaDevices.getUserMedia({
-  video: { facingMode: { ideal: "environment" } },
-  audio: true
-});
+      video: { facingMode: { ideal: "environment" } },
+      audio: true
+    });
     preview.srcObject = stream;
 
     recordedChunks = [];
+    const mimeType = getBestMimeType();
+    console.log('Используем формат:', mimeType);
 
-    // Пробуем mp4 напрямую (работает на iOS Safari и некоторых Android)
-    const mimeType = MediaRecorder.isTypeSupported('video/mp4')
-      ? 'video/mp4'
-      : MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
-      ? 'video/webm;codecs=vp9,opus'
-      : 'video/webm';
-
-    mediaRecorder = new MediaRecorder(stream, { mimeType });
+    const options = mimeType ? { mimeType } : {};
+    mediaRecorder = new MediaRecorder(stream, options);
 
     mediaRecorder.ondataavailable = e => {
       if (e.data.size > 0) recordedChunks.push(e.data);
@@ -62,7 +72,7 @@ startBtn.addEventListener('click', async () => {
     };
 
     mediaRecorder.start(1000);
-    status.textContent = 'Идёт запись...';
+    status.textContent = 'Идёт запись... Формат: ' + (mimeType || 'по умолчанию');
     startBtn.disabled = true;
     stopBtn.disabled = false;
   } catch (err) {
@@ -80,11 +90,12 @@ stopBtn.addEventListener('click', () => {
 });
 
 saveBtn.addEventListener('click', () => {
-  const isMP4 = mediaRecorder.mimeType.includes('mp4');
+  const mimeType = mediaRecorder.mimeType;
+  const isMP4 = mimeType.includes('mp4');
   const ext = isMP4 ? 'mp4' : 'webm';
-  const type = isMP4 ? 'video/mp4' : 'video/webm';
+  const blobType = isMP4 ? 'video/mp4' : 'video/webm';
 
-  const blob = new Blob(recordedChunks, { type });
+  const blob = new Blob(recordedChunks, { type: blobType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -106,9 +117,3 @@ if ('serviceWorker' in navigator) {
     .then(() => console.log('Service Worker зарегистрирован'))
     .catch(err => console.error(err));
 }
-
-
-
-
-
-
